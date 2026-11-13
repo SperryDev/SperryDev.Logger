@@ -27,7 +27,6 @@ jobs:
 
   installer:
     needs: test
-    if: github.event_name != 'pull_request'
     runs-on: windows-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -67,7 +66,7 @@ jobs:
 
   release:
     needs: installer
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -76,12 +75,12 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: SperryDev.Logger.Viewer-Setup
-      - name: Create release (dev = prerelease, main = release)
+      - name: Create release (main = release, everything else = prerelease)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.installer.outputs.version }}
           BRANCH: ${{ github.ref_name }}
         run: |
-          flags=""
-          if [ "$BRANCH" = "dev" ]; then flags="--prerelease"; fi
+          flags="--prerelease"
+          if [ "$BRANCH" = "main" ]; then flags=""; fi
           gh release create "v$VERSION" *.exe --target "$GITHUB_SHA" $flags --title "v$VERSION" --generate-notes
