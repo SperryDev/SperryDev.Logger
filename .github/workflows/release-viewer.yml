@@ -15,6 +15,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
@@ -27,13 +29,26 @@ jobs:
     needs: test
     if: github.event_name != 'pull_request'
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - name: Install Inno Setup
-        run: choco install innosetup -y --no-progress
+      - name: Install NBGV and Inno Setup
+        run: |
+          dotnet tool install --global nbgv
+          choco install innosetup -y --no-progress
+      - name: Compute version (NBGV)
+        id: version
+        shell: bash
+        run: |
+          v=$(nbgv get-version -v SemVer2)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "NBGV version: $v"
       - name: Publish viewer (win-x64, self-contained)
         run: >
           dotnet publish src/SperryDev.Logger.Viewer/SperryDev.Logger.Viewer.csproj
@@ -41,12 +56,28 @@ jobs:
       - name: Compile installer
         shell: pwsh
         run: |
-          $version = (Get-Content version.json | ConvertFrom-Json).version
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" deploy\windows\SperryDev.Logger.Viewer.iss `
-            "/DAppVersion=$version" `
+            "/DAppVersion=${{ steps.version.outputs.version }}" `
             "/DViewerPublishDir=$((Resolve-Path publish/viewer).Path)"
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
           name: SperryDev.Logger.Viewer-Setup
           path: deploy/windows/bin/*.exe
+
+  release:
+    needs: installer
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: SperryDev.Logger.Viewer-Setup
+      - name: Create prerelease on main push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.installer.outputs.version }}
+        run: |
+          gh release create "v$VERSION" *.exe --target "$GITHUB_SHA" --prerelease --title "v$VERSION" --generate-notes
