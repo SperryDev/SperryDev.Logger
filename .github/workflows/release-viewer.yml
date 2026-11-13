@@ -64,6 +64,30 @@ jobs:
           name: SperryDev.Logger.Viewer-Setup
           path: deploy/windows/bin/*.exe
 
+  nuget:
+    needs: installer
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'))
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      VERSION: ${{ needs.installer.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Pack library
+        run: dotnet pack src/SperryDev.Logger/SperryDev.Logger.csproj -c Release -p:PackageVersion=$env:VERSION -o nupkgs
+        shell: pwsh
+      - name: Push to GitHub Packages
+        shell: pwsh
+        run: |
+          foreach ($pkg in Get-ChildItem nupkgs/*.nupkg) {
+            dotnet nuget push $pkg.FullName --source https://nuget.pkg.github.com/rsperry79/index.json --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
+          }
+
   release:
     needs: installer
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'))
