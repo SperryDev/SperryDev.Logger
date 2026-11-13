@@ -2,9 +2,9 @@ name: release-viewer
 
 on:
   push:
-    branches: [main]
+    branches: [dev, main]
   pull_request:
-    branches: [main]
+    branches: [dev, main]
   workflow_dispatch:
 
 permissions:
@@ -67,7 +67,7 @@ jobs:
 
   release:
     needs: installer
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -75,9 +75,12 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: SperryDev.Logger.Viewer-Setup
-      - name: Create prerelease on main push
+      - name: Create release (dev = prerelease, main = release)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.installer.outputs.version }}
+          BRANCH: ${{ github.ref_name }}
         run: |
-          gh release create "v$VERSION" *.exe --target "$GITHUB_SHA" --prerelease --title "v$VERSION" --generate-notes
+          flags=""
+          if [ "$BRANCH" = "dev" ]; then flags="--prerelease"; fi
+          gh release create "v$VERSION" *.exe --target "$GITHUB_SHA" $flags --title "v$VERSION" --generate-notes
