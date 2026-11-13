@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/SperryDev.Logger/SperryDev.Logger.csproj" />
+    <Project Path="src/SperryDev.Logger.Viewer/SperryDev.Logger.Viewer.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/SperryDev.Logger.Tests/SperryDev.Logger.Tests.csproj" />
