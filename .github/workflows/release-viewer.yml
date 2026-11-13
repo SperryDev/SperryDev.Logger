@@ -82,7 +82,11 @@ jobs:
         run: dotnet pack src/SperryDev.Logger/SperryDev.Logger.csproj -c Release -p:PackageVersion=$env:VERSION -o nupkgs
         shell: pwsh
       - name: Push to GitHub Packages
-        run: dotnet nuget push "nupkgs/*.nupkg" --source https://nuget.pkg.github.com/rsperry79/index.json --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
+        shell: pwsh
+        run: |
+          foreach ($pkg in Get-ChildItem nupkgs/*.nupkg) {
+            dotnet nuget push $pkg.FullName --source https://nuget.pkg.github.com/rsperry79/index.json --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
+          }
 
   release:
     needs: installer
