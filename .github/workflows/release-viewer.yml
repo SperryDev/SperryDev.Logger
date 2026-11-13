@@ -85,7 +85,7 @@ jobs:
         shell: pwsh
         run: |
           foreach ($pkg in Get-ChildItem nupkgs/*.nupkg) {
-            dotnet nuget push $pkg.FullName --source https://nuget.pkg.github.com/rsperry79/index.json --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
+            dotnet nuget push $pkg.FullName --source https://nuget.pkg.github.com/rsperry79/index.json --api-key ${{ secrets.NUGET_TOKEN }} --skip-duplicate
           }
 
   release:
