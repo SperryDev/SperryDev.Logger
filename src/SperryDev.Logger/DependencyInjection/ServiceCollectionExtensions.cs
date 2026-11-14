@@ -41,36 +41,21 @@ namespace SperryDev.Logger.DependencyInjection
         }
 
         /// <summary>
-        /// Registers Serilog-based structured logging with rolling file sinks (text and JSON formats).
-        /// When Serilog is configured via Log.Logger before host creation, this method integrates it
-        /// with the logging pipeline. Optionally enables Windows Event Log and/or Linux syslog for
-        /// unattended-service visibility. Also registers the in-memory buffer provider.
+        /// Wires the static Serilog Log.Logger into the logging pipeline. Optionally enables Windows Event Log
+        /// and/or Linux syslog for unattended-service visibility. Also registers the in-memory buffer provider.
         ///
-        /// NOTE: For Serilog configuration, configure Log.Logger BEFORE calling this method.
-        /// This method assumes Serilog's static Log.Logger is already set up with file sinks.
+        /// NOTE: configure Log.Logger (file sinks etc.) BEFORE calling this method.
         /// </summary>
         public static ILoggingBuilder AddVideoForensicsLogging(
             this ILoggingBuilder logging,
-            string logFilePath,
-            LogLevel minimumLevel = LogLevel.Information,
             bool enableEventLog = false,
             bool enableSyslog = false,
             bool enableNamedPipeLogger = false,
             Action<ILoggingBuilder>? eventLogProvider = null,
-            NamedPipeLogGate? namedPipeGate = null)
+            NamedPipeLogGate? namedPipeGate = null,
+            string syslogAppName = "SperryDev")
         {
-            // Serilog integration: if Serilog is configured globally via Log.Logger, wire it into the logging pipeline.
-            // The logFilePath parameter is kept for backward compatibility but is now superseded by
-            // Serilog's configuration (which should be done before host creation in Program.cs).
-            if (Serilog.Log.Logger != null)
-            {
-                _ = logging.AddSerilog(dispose: true);
-            }
-            else
-            {
-                // Fallback for hosts that don't pre-configure Serilog: use legacy file provider.
-                _ = logging.AddProvider(new FileLoggerProvider(logFilePath, minimumLevel));
-            }
+            _ = logging.AddSerilog(dispose: true);
 
             if (enableEventLog && OperatingSystem.IsWindows() && eventLogProvider is not null)
             {
@@ -81,7 +66,7 @@ namespace SperryDev.Logger.DependencyInjection
             {
                 // Additional syslog configuration (independent of file sinks).
                 Serilog.Core.Logger syslogLogger = new LoggerConfiguration()
-                    .WriteTo.LocalSyslog(appName: "VideoForensics")
+                    .WriteTo.LocalSyslog(appName: syslogAppName)
                     .CreateLogger();
                 _ = logging.AddSerilog(syslogLogger, dispose: true);
             }
