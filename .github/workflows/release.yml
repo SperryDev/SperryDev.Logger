@@ -1,5 +1,6 @@
-name: release-viewer
+name: release
 
+# Pull requests run the tests only. A push to dev publishes a prerelease; a push to main publishes a release.
 on:
   push:
     branches: [dev, main]
@@ -76,7 +77,7 @@ jobs:
 
   nuget:
     needs: installer
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'))
+    if: github.event_name == 'push'
     runs-on: windows-latest
     permissions:
       contents: read
@@ -98,14 +99,16 @@ jobs:
         shell: pwsh
       - name: Push to GitHub Packages
         shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           foreach ($pkg in Get-ChildItem nupkgs/*.nupkg) {
-            dotnet nuget push $pkg.FullName --source https://nuget.pkg.github.com/rsperry79/index.json --api-key ${{ secrets.NUGET_TOKEN }} --skip-duplicate
+            dotnet nuget push $pkg.FullName --source https://nuget.pkg.github.com/rsperry79/index.json --api-key $env:GITHUB_TOKEN --skip-duplicate
           }
 
   release:
     needs: installer
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'))
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -114,7 +117,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: SperryDev.Logger.Viewer-Setup
-      - name: Create release (main = release, everything else = prerelease)
+      - name: Create release (dev = prerelease, main = release)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.installer.outputs.version }}
