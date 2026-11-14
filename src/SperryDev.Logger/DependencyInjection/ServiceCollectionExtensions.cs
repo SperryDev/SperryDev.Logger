@@ -57,7 +57,8 @@ namespace SperryDev.Logger.DependencyInjection
             bool enableSyslog = false,
             bool enableNamedPipeLogger = false,
             Action<ILoggingBuilder>? eventLogProvider = null,
-            NamedPipeLogGate? namedPipeGate = null)
+            NamedPipeLogGate? namedPipeGate = null,
+            bool enableDebugOutput = false)
         {
             // Serilog integration: if Serilog is configured globally via Log.Logger, wire it into the logging pipeline.
             // The logFilePath parameter is kept for backward compatibility but is now superseded by
@@ -84,6 +85,15 @@ namespace SperryDev.Logger.DependencyInjection
                     .WriteTo.LocalSyslog(appName: "VideoForensics")
                     .CreateLogger();
                 _ = logging.AddSerilog(syslogLogger, dispose: true);
+            }
+
+            if (enableDebugOutput)
+            {
+                // Writes to the debug output, which the Visual Studio Output window shows while a debugger is attached.
+                Serilog.Core.Logger debugLogger = new LoggerConfiguration()
+                    .WriteTo.Debug()
+                    .CreateLogger();
+                _ = logging.AddSerilog(debugLogger, dispose: true);
             }
 
             if (enableNamedPipeLogger && OperatingSystem.IsWindows())
