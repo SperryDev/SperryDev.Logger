@@ -1,0 +1,110 @@
+name: release-viewer
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build tests
+        run: dotnet build tests/SperryDev.Logger.Tests -m:1
+      - name: Run tests
+        run: dotnet test tests/SperryDev.Logger.Tests --no-build --output normal
+
+  installer:
+    needs: test
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install NBGV and Inno Setup
+        run: |
+          dotnet tool install --global nbgv
+          choco install innosetup -y --no-progress
+      - name: Compute version (NBGV)
+        id: version
+        shell: bash
+        run: |
+          v=$(nbgv get-version -v SemVer2)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "NBGV version: $v"
+      - name: Publish viewer (win-x64, self-contained)
+        run: >
+          dotnet publish src/SperryDev.Logger.Viewer/SperryDev.Logger.Viewer.csproj
+          -c Release -r win-x64 --self-contained true -o publish/viewer
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" deploy\windows\SperryDev.Logger.Viewer.iss `
+            "/DAppVersion=${{ steps.version.outputs.version }}" `
+            "/DViewerPublishDir=$((Resolve-Path publish/viewer).Path)"
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: SperryDev.Logger.Viewer-Setup
+          path: deploy/windows/bin/*.exe
+
+  nuget:
+    needs: installer
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'))
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      VERSION: ${{ needs.installer.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Pack library
+        run: dotnet pack src/SperryDev.Logger/SperryDev.Logger.csproj -c Release -p:PackageVersion=$env:VERSION -o nupkgs
+        shell: pwsh
+      - name: Push to GitHub Packages
+        shell: pwsh
+        run: |
+          foreach ($pkg in Get-ChildItem nupkgs/*.nupkg) {
+            dotnet nuget push $pkg.FullName --source https://nuget.pkg.github.com/rsperry79/index.json --api-key ${{ secrets.NUGET_TOKEN }} --skip-duplicate
+          }
+
+  release:
+    needs: installer
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: SperryDev.Logger.Viewer-Setup
+      - name: Create release (main = release, everything else = prerelease)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.installer.outputs.version }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          flags="--prerelease"
+          if [ "$BRANCH" = "main" ]; then flags=""; fi
+          gh release create "v$VERSION" *.exe --target "$GITHUB_SHA" $flags --title "v$VERSION" --generate-notes
