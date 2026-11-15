@@ -7,5 +7,7 @@
     <PackageLicenseExpression>UNLICENSED</PackageLicenseExpression>
     <Version>0.1.0</Version>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <SignAssembly Condition="Exists('$(MSBuildThisFileDirectory)SperryDev.Logger.snk')">true</SignAssembly>
+    <AssemblyOriginatorKeyFile Condition="Exists('$(MSBuildThisFileDirectory)SperryDev.Logger.snk')">$(MSBuildThisFileDirectory)SperryDev.Logger.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 </Project>

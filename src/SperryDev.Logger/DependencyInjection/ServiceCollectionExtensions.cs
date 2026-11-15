@@ -53,7 +53,8 @@ namespace SperryDev.Logger.DependencyInjection
             bool enableNamedPipeLogger = false,
             Action<ILoggingBuilder>? eventLogProvider = null,
             NamedPipeLogGate? namedPipeGate = null,
-            string syslogAppName = "SperryDev")
+            string syslogAppName = "SperryDev",
+            bool enableDebugOutput = false)
         {
             _ = logging.AddSerilog(dispose: true);
 
@@ -69,6 +70,15 @@ namespace SperryDev.Logger.DependencyInjection
                     .WriteTo.LocalSyslog(appName: syslogAppName)
                     .CreateLogger();
                 _ = logging.AddSerilog(syslogLogger, dispose: true);
+            }
+
+            if (enableDebugOutput)
+            {
+                // Writes to the debug output, which the Visual Studio Output window shows while a debugger is attached.
+                Serilog.Core.Logger debugLogger = new LoggerConfiguration()
+                    .WriteTo.Debug()
+                    .CreateLogger();
+                _ = logging.AddSerilog(debugLogger, dispose: true);
             }
 
             if (enableNamedPipeLogger && OperatingSystem.IsWindows())
