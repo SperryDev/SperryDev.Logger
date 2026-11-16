@@ -62,7 +62,7 @@ namespace SperryDev.Logger.Tests.Providers
 
             // Act
             _logger.LogInformation("Test message");
-            await Task.Delay(200); // Wait for async write
+            await Task.Delay(200, TestContext.Current.CancellationToken); // Wait for async write
 
             // Assert - verify circular buffer has the entry
             string[] buffered = _provider.GetBufferedEntries();
@@ -256,7 +256,7 @@ namespace SperryDev.Logger.Tests.Providers
                     {
                         _logger.LogInformation($"Thread {threadId} Message {i}");
                     }
-                }));
+                }, TestContext.Current.CancellationToken));
             }
 
             await Task.WhenAll(tasks);
