@@ -17,7 +17,7 @@ namespace SperryDev.Logger.Services
 
         private readonly int _capacity;
         private readonly List<LogRecord> _entries;
-        private readonly Lock _syncRoot = new();
+        private readonly object _syncRoot = new();
         private long _nextSequence = 1;
         private bool _disposed;
         private Subscriber[] _subscribers = [];
