@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="SperryDev.Logger.snk" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/SperryDev.Logger/SperryDev.Logger.csproj" />
     <Project Path="src/SperryDev.Logger.Viewer/SperryDev.Logger.Viewer.csproj" />

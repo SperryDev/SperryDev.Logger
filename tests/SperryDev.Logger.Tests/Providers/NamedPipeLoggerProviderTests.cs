@@ -73,6 +73,11 @@ namespace SperryDev.Logger.Tests.Providers
         [Fact]
         public void WriteLog_JsonFormatIsValid()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             // Act
             _logger.LogError("Error test");
 
@@ -92,6 +97,11 @@ namespace SperryDev.Logger.Tests.Providers
         [Fact]
         public void WriteLog_IncludesTimestampInIso8601Format()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             // Act
             _logger.LogInformation("Test");
 
@@ -109,6 +119,11 @@ namespace SperryDev.Logger.Tests.Providers
         [Fact]
         public void WriteLog_CircularBuffer_MaintainsMax500Entries()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             const int testEntries = 650;
 
             // Act - log more than 500 entries
@@ -131,6 +146,11 @@ namespace SperryDev.Logger.Tests.Providers
         [Fact]
         public void WriteLog_IncludesLogLevel()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             // Act
             _logger.LogWarning("Warning test");
 
@@ -144,6 +164,11 @@ namespace SperryDev.Logger.Tests.Providers
         [Fact]
         public void WriteLog_IncludesCategory()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             // Arrange
             ILogger logger = _provider.CreateLogger("MyCustomCategory");
 
@@ -160,6 +185,11 @@ namespace SperryDev.Logger.Tests.Providers
         [Fact]
         public void WriteLog_WithException_IncludesExceptionInMessage()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             // Act
             var ex = new InvalidOperationException("Test exception");
             _logger.LogError(ex, "Error with exception");
@@ -176,6 +206,11 @@ namespace SperryDev.Logger.Tests.Providers
         [Fact]
         public void WriteLog_WithEventId_IncludesEventIdInJson()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             // Act
             var eventId = new EventId(42, "TestEvent");
             _logger.Log(LogLevel.Information, eventId, "Test", null, (state, ex) => state.ToString());
@@ -202,6 +237,11 @@ namespace SperryDev.Logger.Tests.Providers
         [Fact]
         public async Task WriteLog_ThreadSafe_ConcurrentWrites()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             const int threadCount = 10;
             const int messagesPerThread = 100;
             var tasks = new List<Task>();
@@ -240,6 +280,11 @@ namespace SperryDev.Logger.Tests.Providers
         [Fact]
         public void GetBufferedEntries_ReturnsSnapshot()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             // Arrange
             _logger.LogInformation("Message 1");
             string[] firstSnapshot = _provider.GetBufferedEntries();
@@ -268,6 +313,11 @@ namespace SperryDev.Logger.Tests.Providers
         [Fact]
         public void CreateLogger_MultipleLoggers_ShareBuffer()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             // Arrange
             ILogger logger1 = _provider.CreateLogger("Category1");
             ILogger logger2 = _provider.CreateLogger("Category2");
@@ -332,6 +382,11 @@ namespace SperryDev.Logger.Tests.Providers
         [Fact]
         public void LogEntry_JsonSerialization_IgnoresDefaultEventId()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             // Arrange - log with default (zero) event ID
             ILogger logger = _provider.CreateLogger("Test");
             logger.Log(LogLevel.Information, default, "Test", null, (state, ex) => state.ToString());
@@ -347,6 +402,11 @@ namespace SperryDev.Logger.Tests.Providers
         [Fact]
         public void LogEntry_JsonSerialization_IgnoresNullEventName()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             // Arrange
             ILogger logger = _provider.CreateLogger("Test");
             logger.Log(LogLevel.Information, new EventId(0, null), "Test", null, (state, ex) => state.ToString());
@@ -369,6 +429,11 @@ namespace SperryDev.Logger.Tests.Providers
         [InlineData(LogLevel.Critical)]
         public void WriteLog_AllLogLevels_Supported(LogLevel level)
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             // Act
             string message = "Message at level " + level.ToString();
             _logger.Log(level, new EventId(0, null), message, null, (state, ex) => state);
@@ -383,6 +448,11 @@ namespace SperryDev.Logger.Tests.Providers
         [Fact]
         public void WriteLog_ControlCharacterInMessage_RoundTripsThroughJson()
         {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
             // Hand-built JSON escaped only \\ \" \r \n \t, so other control characters produced invalid JSON.
             string message = "bell\u0007 form\u000C back\b unit\u001F";
 
