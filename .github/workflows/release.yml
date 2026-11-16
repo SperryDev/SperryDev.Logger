@@ -31,6 +31,24 @@ jobs:
       - name: Run tests
         run: dotnet test tests/SperryDev.Logger.Tests --no-build --output normal
 
+  test-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore strong-name key
+        env:
+          SNK_BASE64: ${{ secrets.SNK_BASE64 }}
+        run: printf '%s' "$SNK_BASE64" | base64 -d > SperryDev.Logger.snk
+      - name: Build tests
+        run: dotnet build tests/SperryDev.Logger.Tests
+      - name: Run tests
+        run: dotnet test tests/SperryDev.Logger.Tests --no-build --output normal
+
   installer:
     needs: test
     runs-on: windows-latest
