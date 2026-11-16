@@ -144,7 +144,7 @@ namespace SperryDev.Logger.Tests.Providers
             List<LogRecord> snapshot = _buffer.GetSnapshot(minLevel: null, search: null, afterSequence: null, limit: 10);
             _ = Assert.Single(snapshot);
             Assert.NotNull(snapshot[0].Exception);
-            Assert.True(snapshot[0].Exception.Length <= 4000);
+            Assert.True(snapshot[0].Exception!.Length <= 4000);
         }
 
         [Fact]
