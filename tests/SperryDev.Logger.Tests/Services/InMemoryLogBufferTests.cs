@@ -364,7 +364,7 @@ namespace SperryDev.Logger.Tests.Services
                             Exception: null);
                         buffer.Append(ref entry);
                     }
-                }));
+                }, TestContext.Current.CancellationToken));
             }
 
             await Task.WhenAll(tasks);
@@ -510,9 +510,9 @@ namespace SperryDev.Logger.Tests.Services
                 try
                 { await foreach (LogRecord _ in live) { } }
                 catch (OperationCanceledException) { }
-            });
+            }, TestContext.Current.CancellationToken);
             cts.Cancel();
-            await task.WaitAsync(TimeSpan.FromSeconds(10));
+            await task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
 
             Assert.Equal(0, _buffer.SubscriberCount);
         }
@@ -521,11 +521,11 @@ namespace SperryDev.Logger.Tests.Services
         public async Task Subscribe_DisposingEnumerator_RemovesSubscriber()
         {
             IAsyncEnumerable<LogRecord> live = _buffer.Subscribe(null, null, null, CancellationToken.None);
-            IAsyncEnumerator<LogRecord> e = live.GetAsyncEnumerator();
+            IAsyncEnumerator<LogRecord> e = live.GetAsyncEnumerator(TestContext.Current.CancellationToken);
             Task<bool> move = e.MoveNextAsync().AsTask();
             LogRecord r = Rec();
             _buffer.Append(ref r);
-            Assert.True(await move.WaitAsync(TimeSpan.FromSeconds(10)));
+            Assert.True(await move.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
 
             await e.DisposeAsync();
 
@@ -540,7 +540,7 @@ namespace SperryDev.Logger.Tests.Services
 
             _buffer.Dispose();
 
-            List<LogRecord> items = await task.WaitAsync(TimeSpan.FromSeconds(10));
+            List<LogRecord> items = await task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
             Assert.Empty(items);
             Assert.Equal(0, _buffer.SubscriberCount);
         }
@@ -609,7 +609,7 @@ namespace SperryDev.Logger.Tests.Services
                     go.Wait();
                     for (int i = 0; i < perWriter; i++)
                     { LogRecord r = Rec(); _buffer.Append(ref r); Thread.SpinWait(2000); }
-                }));
+                }, TestContext.Current.CancellationToken));
             }
 
             go.Set();

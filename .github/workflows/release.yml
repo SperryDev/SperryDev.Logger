@@ -15,10 +15,10 @@ jobs:
   test:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
       - name: Restore strong-name key
@@ -34,10 +34,10 @@ jobs:
   test-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
       - name: Restore strong-name key
@@ -55,10 +55,10 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
       - name: Restore strong-name key
@@ -88,7 +88,7 @@ jobs:
             "/DAppVersion=${{ steps.version.outputs.version }}" `
             "/DViewerPublishDir=$((Resolve-Path publish/viewer).Path)"
       - name: Upload installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: SperryDev.Logger.Viewer-Setup
           path: deploy/windows/bin/*.exe
@@ -103,8 +103,8 @@ jobs:
     env:
       VERSION: ${{ needs.installer.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
+      - uses: actions/checkout@v7
         with:
           dotnet-version: '10.0.x'
       - name: Restore strong-name key
@@ -131,8 +131,8 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: SperryDev.Logger.Viewer-Setup
       - name: Create release (dev = prerelease, main = release)
