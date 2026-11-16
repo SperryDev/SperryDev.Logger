@@ -118,10 +118,10 @@ jobs:
       - name: Push to GitHub Packages
         shell: pwsh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
         run: |
           foreach ($pkg in Get-ChildItem nupkgs/*.nupkg) {
-            dotnet nuget push $pkg.FullName --source https://nuget.pkg.github.com/rsperry79/index.json --api-key $env:GITHUB_TOKEN --skip-duplicate
+            dotnet nuget push $pkg.FullName --source https://nuget.pkg.github.com/rsperry79/index.json --api-key $env:NUGET_TOKEN --skip-duplicate
           }
 
   release:
