@@ -93,6 +93,33 @@ jobs:
           name: SperryDev.Logger.Viewer-Setup
           path: deploy/windows/bin/*.exe
 
+  pr-prerelease:
+    needs: installer
+    # Fork PRs have no write token, so only same-repo PRs get a preview release.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        with:
+          name: SperryDev.Logger.Viewer-Setup
+      - name: Publish installer to PR prerelease (pr-<number>)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: pr-${{ github.event.number }}
+          TITLE: "PR #${{ github.event.number }} preview"
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" *.exe --clobber
+          else
+            gh release create "$TAG" *.exe --prerelease --target "$GITHUB_SHA" --title "$TITLE" \
+              --notes "Preview installer for PR #${{ github.event.number }}. Replaced on each push to the PR."
+          fi
+
   nuget:
     needs: installer
     if: github.event_name == 'push'
