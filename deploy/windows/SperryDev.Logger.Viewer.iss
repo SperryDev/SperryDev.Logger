@@ -36,6 +36,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 UninstallDisplayName={#AppName}
 UninstallDisplayIcon={app}\{#AppExe}
+ChangesEnvironment=yes
 
 [Files]
 Source: "{#ViewerPublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -46,3 +47,49 @@ Name: "{group}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "Launch {#AppName}"; Flags: nowait postinstall skipifsilent unchecked
+
+[Code]
+const
+  MachineEnvKey = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
+
+// Adds {app} to the machine-wide PATH (HKLM) unless it is already present.
+procedure AddAppToPath();
+var
+  Path, Dir: string;
+begin
+  Dir := ExpandConstant('{app}');
+  if not RegQueryStringValue(HKLM, MachineEnvKey, 'Path', Path) then
+    Path := '';
+  if Pos(';' + Uppercase(Dir) + ';', ';' + Uppercase(Path) + ';') > 0 then
+    Exit;
+  if (Path <> '') and (Path[Length(Path)] <> ';') then
+    Path := Path + ';';
+  Path := Path + Dir;
+  RegWriteExpandStringValue(HKLM, MachineEnvKey, 'Path', Path);
+end;
+
+// Removes {app} from the machine-wide PATH on uninstall.
+procedure RemoveAppFromPath();
+var
+  Path, Dir: string;
+begin
+  Dir := ExpandConstant('{app}');
+  if not RegQueryStringValue(HKLM, MachineEnvKey, 'Path', Path) then
+    Exit;
+  StringChangeEx(Path, ';' + Dir, '', False);
+  StringChangeEx(Path, Dir + ';', '', False);
+  StringChangeEx(Path, Dir, '', False);
+  RegWriteExpandStringValue(HKLM, MachineEnvKey, 'Path', Path);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+    AddAppToPath();
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usPostUninstall then
+    RemoveAppFromPath();
+end;
